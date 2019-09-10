@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+### Functions
+function  docker_init {
+  local init_command="$(docker_labels $1 init)"
+  if [[ $init_command == "<no value>" ]]; then
+    echo "Image $1 provides no instructions for initialization."
+    return 1
+  else
+    eval $init_command
+  fi
+}
+
+function docker_labels {
+  if [ -z "$2" ]; then
+    docker inspect $1 -f "{{json .Config.Labels}}"
+  else
+    docker inspect $1 -f "{{.Config.Labels.$2}}"
+  fi
+}
+
+case $1 in
+  "run" )
+    shift
+    docker-compose run --rm $@;;
+  "init" )
+    shift
+    docker_init $@;;
+  "labels" )
+    shift
+    docker_labels $@;;
+  * )
+    exec docker-compose $@;;
+esac
